@@ -66,10 +66,30 @@ jobs:
             MLProject/run_id.txt
 
       # ---- Advanced: Docker build & push ----
+      # 7b. Patch conda.yaml model -> conda-forge + nodefaults.
+      # Mencegah CondaToSNonInteractiveError karena channel default Anaconda
+      # (repo.anaconda.com/pkgs/main & pkgs/r) kini mensyaratkan Terms of Service.
+      - name: Patch model conda.yaml (hindari Anaconda ToS)
+        run: |
+          python - <<'PY'
+          import glob, yaml
+          files = glob.glob("mlruns/**/conda.yaml", recursive=True)
+          files = [f for f in files if "model" in f]
+          print("conda.yaml ditemukan:", files)
+          for p in files:
+              with open(p) as f:
+                  d = yaml.safe_load(f)
+              d["channels"] = ["conda-forge", "nodefaults"]
+              with open(p, "w") as f:
+                  yaml.safe_dump(d, f, sort_keys=False)
+              print(f"--- patched {p} ---")
+              print(open(p).read())
+          PY
+
       # 8. Build Docker Model
-      # Pakai --env-manager conda (base image miniconda3) untuk menghindari bug
-      # build-docker default (virtualenv) yang gagal saat install python3.9 +
-      # get-pip.py (URL get-pip generik sudah tidak mendukung Python 3.9).
+      # Pakai --env-manager conda (base image miniconda3). Mode default
+      # (virtualenv) rusak: install python3.9 + get-pip generik gagal karena
+      # URL get-pip sudah tidak mendukung Python 3.9.
       - name: Build Docker Model
         run: |
           mlflow models build-docker \
