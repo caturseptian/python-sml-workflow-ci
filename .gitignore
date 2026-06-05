@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+mlruns/
+mlartifacts/
+run_id.txt
+.venv/

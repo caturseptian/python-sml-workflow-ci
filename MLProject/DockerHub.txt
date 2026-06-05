@@ -1,0 +1,13 @@
+Tautan ke Docker Hub (image hasil CI - kriteria Advanced):
+https://hub.docker.com/r/caturseptian/breast-cancer-model
+
+Image di-build oleh GitHub Actions menggunakan:
+    mlflow models build-docker -m "runs:/<RUN_ID>/model" -n caturseptian/breast-cancer-model
+
+Tag yang dipush:
+    caturseptian/breast-cancer-model:latest
+
+Cara menjalankan image secara lokal (serving REST API di port 5005):
+    docker pull caturseptian/breast-cancer-model:latest
+    docker run -p 5005:8080 caturseptian/breast-cancer-model:latest
+    # endpoint prediksi: POST http://127.0.0.1:5005/invocations
