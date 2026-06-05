@@ -67,11 +67,15 @@ jobs:
 
       # ---- Advanced: Docker build & push ----
       # 8. Build Docker Model
+      # Pakai --env-manager conda (base image miniconda3) untuk menghindari bug
+      # build-docker default (virtualenv) yang gagal saat install python3.9 +
+      # get-pip.py (URL get-pip generik sudah tidak mendukung Python 3.9).
       - name: Build Docker Model
         run: |
           mlflow models build-docker \
             -m "runs:/${{ steps.get_run.outputs.run_id }}/model" \
-            -n "${DOCKER_IMAGE}"
+            -n "${DOCKER_IMAGE}" \
+            --env-manager conda
 
       # 9. Log in to Docker Hub
       - name: Log in to Docker Hub
