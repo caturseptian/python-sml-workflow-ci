@@ -66,36 +66,22 @@ jobs:
             MLProject/run_id.txt
 
       # ---- Advanced: Docker build & push ----
-      # 7b. Patch conda.yaml model -> conda-forge + nodefaults.
-      # Mencegah CondaToSNonInteractiveError karena channel default Anaconda
-      # (repo.anaconda.com/pkgs/main & pkgs/r) kini mensyaratkan Terms of Service.
-      - name: Patch model conda.yaml (hindari Anaconda ToS)
-        run: |
-          python - <<'PY'
-          import glob, yaml
-          files = glob.glob("mlruns/**/conda.yaml", recursive=True)
-          files = [f for f in files if "model" in f]
-          print("conda.yaml ditemukan:", files)
-          for p in files:
-              with open(p) as f:
-                  d = yaml.safe_load(f)
-              d["channels"] = ["conda-forge", "nodefaults"]
-              with open(p, "w") as f:
-                  yaml.safe_dump(d, f, sort_keys=False)
-              print(f"--- patched {p} ---")
-              print(open(p).read())
-          PY
-
       # 8. Build Docker Model
-      # Pakai --env-manager conda (base image miniconda3). Mode default
-      # (virtualenv) rusak: install python3.9 + get-pip generik gagal karena
-      # URL get-pip sudah tidak mendukung Python 3.9.
+      # build-docker dari mlflow 2.19.0 bermasalah di runner saat ini:
+      #   - virtualenv: base ubuntu install python3.9 + get-pip generik -> gagal
+      #   - conda    : channel default Anaconda butuh Terms of Service -> gagal
+      # Solusi: upgrade mlflow ke versi terbaru KHUSUS untuk membuat image
+      # (template Dockerfile-nya sudah diperbaiki, pakai virtualenv/uv). Image
+      # tetap menyajikan model dengan dependency asli (mlflow==2.19.0) sesuai
+      # requirements model yang ikut disalin ke dalam image.
       - name: Build Docker Model
         run: |
+          pip install -U "mlflow>=3.1" "pip>=24"
+          mlflow --version
           mlflow models build-docker \
             -m "runs:/${{ steps.get_run.outputs.run_id }}/model" \
             -n "${DOCKER_IMAGE}" \
-            --env-manager conda
+            --env-manager virtualenv
 
       # 9. Log in to Docker Hub
       - name: Log in to Docker Hub
